@@ -10,21 +10,28 @@ Everything is in ./config/aws_lambda.js
 
 gulp -T
 
-├── package:function1
-├── upload:function1
-├── deploy:function1
-├── invoke:function1:1
-├── invoke:function1:2
-├── package:function2
-├── upload:function2
-├── deploy:function2
-├── invoke:function2:1
-├── clean
-├── package
-├── deploy
-└── spec
+- package:function1
+- upload:function1
+- deploy:function1
+- invoke:function1:1
+- invoke:function1:2
+- package:function2
+- upload:function2
+- deploy:function2
+- invoke:function2:1
+- clean
+- package
+- deploy
+- spec
 
-Any file <f> in ./spec/fixtures/<function>/ will result in new gulp task: invoke:<function>:<f>. This task invokes function remotely.
+Any file f in ./spec/fixtures/function/ will result in new gulp task: invoke:function:f. This task invokes function remotely.
 Use specs to test functions locally.
+
+## Environment
+
+Use --qa and --production switches to change task environment. Example: gulp package --qa.
+You can change env specific options in config file.
+
+## Additional functionality
 
 Feel free to modify ./gulp_tasks/aws_lambda.js to add additional functionality, event sources, SQS queues, etc.
