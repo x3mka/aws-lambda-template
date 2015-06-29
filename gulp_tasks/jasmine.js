@@ -16,10 +16,12 @@ module.exports = function(gulp) {
                         reportOpts: { dir: './coverage' }
                     }));
             });
+    });
 
+    gulp.task('spec_no_cc', function () {
 
-        //return gulp.src('spec/**/*.spec.js')
-        //    .pipe(jasmine());
+        return gulp.src('spec/**/*.spec.js')
+            .pipe(jasmine());
     });
 
 }
