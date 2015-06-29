@@ -1,6 +1,6 @@
-var f = require('../src/function1.js');
+var f = require('../src/function2.js');
 
-describe('function1', function() {
+describe('function2', function() {
 
     beforeEach(function() {
         this.event = {};
@@ -9,6 +9,6 @@ describe('function1', function() {
 
     it('should be ok', function() {
         f.handler(this.event, this.context);
-        expect(this.context.done).toHaveBeenCalledWith(null, "function1");
+        expect(this.context.done).toHaveBeenCalledWith(null, "test");
     });
 })

@@ -1,6 +1,6 @@
-var common = require('./lib/common.js');
+// Config options usage example
+var config = require('config').get('functions.function2.configOptions');
 
 exports.handler = function(event, context) {
-    var res = common.run('function2');
-    context.done(null, res);
+    context.done(null, config.prop);
 }

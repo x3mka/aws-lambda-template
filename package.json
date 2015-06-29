@@ -1,14 +1,14 @@
 {
-  "name": "gulp-aws-lambda",
+  "name": "aws-lambda-template",
   "version": "0.0.1",
-  "description": "Gulp tasks handling AWS Lambda source code",
+  "description": "AWS Lambda multi function app template (Gulp, Jasmine, Code Coverage)",
   "main": "index.js",
   "scripts": {
     "test": "mocha --reporter spec"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/x3mka/gulp-aws-lambda.git"
+    "url": "git+https://github.com/x3mka/aws-lambda-template.git"
   },
   "keywords": [
     "aws",
@@ -18,22 +18,22 @@
   "author": "Dmitry Boltrushko",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/x3mka/gulp-aws-lambda/issues"
+    "url": "https://github.com/x3mka/aws-lambda-template/issues"
   },
-  "homepage": "https://github.com/x3mka/gulp-aws-lambda#readme",
-  "dependencies": {},
+  "homepage": "https://github.com/x3mka/aws-lambda-template#readme",
+  "dependencies": {
+    "config": "^1.14.0",
+    "async": "^1.2.1"
+  },
   "devDependencies": {
-    "async": "^1.2.1",
     "aws-sdk": "^2.1.36",
-    "coveralls": "^2.11.2",
     "del": "^1.2.0",
     "gulp": "^3.9.0",
+    "gulp-istanbul": "^0.10.0",
     "gulp-jasmine": "^2.0.1",
     "gulp-util": "^3.0.5",
     "gulp-zip": "^3.0.2",
-    "istanbul": "^0.3.16",
     "jasmine-node": "^1.14.5",
-    "merge": "^1.2.0",
     "run-sequence": "^1.1.1"
   }
 }

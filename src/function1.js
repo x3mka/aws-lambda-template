@@ -1,3 +1,4 @@
+// Common code usage example
 var common = require('./lib/common.js');
 
 exports.handler = function (event, context) {

@@ -1,8 +1,8 @@
+var config  = require('config');
 var del = require('del');
 var zip = require('gulp-zip');
 var gutil = require('gulp-util');
 var sequence = require('run-sequence');
-var merge = require('merge');
 var aws = require('aws-sdk');
 var path = require('path');
 var fs = require('fs');
@@ -13,37 +13,22 @@ aws.config.apiVersions = {
 };
 
 
-module.exports = function(gulp, config) {
-
-    var config = config;
-
-    var currentEnv = function() {
-        if (gutil.env.production === true)
-            return 'production';
-        if (gutil.env.qa === true)
-            return 'qa';
-        return 'development';
-    }
-
-    var currentEnvConfig = function() {
-        var env = currentEnv();
-        var defaultConfig = config.default;
-        var envConfig = config[env];
-        return merge.recursive(defaultConfig, envConfig)
-    }
+module.exports = function(gulp) {
 
     var functionConfig = function(f) {
-        var curEnvConfig = currentEnvConfig();
-        return merge.recursive(curEnvConfig.allFunctionsOptions, curEnvConfig.functions[f]);
+        return config.get('functions.' + f);
     }
 
     var functionTasks = function(f) {
 
         var package = function(f, cb) {
-            var fConfig = functionConfig(f);
-
             gulp.task('clean:' + f, function(cb) {
                 del(['./dist/' + f, './dist/' + f + '.zip'], cb);
+            });
+
+            gulp.task('copy_config:' + f, function() {
+                return gulp.src(['config/*.*'], {base: '.'})
+                    .pipe(gulp.dest('./dist/' + f));
             });
 
             gulp.task('copy_source:' + f, function() {
@@ -52,12 +37,14 @@ module.exports = function(gulp, config) {
             });
 
             gulp.task('copy_node_modules:' + f, function() {
+                var fConfig = functionConfig(f);
                 var sources = fConfig.packageOptions.nodeModules.map(function(m) { return 'node_modules/' + m + '/**/*'; });
                 return gulp.src(sources, {base: '.'})
                     .pipe(gulp.dest('./dist/' + f));
             });
 
             gulp.task('copy_files:' + f, function() {
+                var fConfig = functionConfig(f);
                 var sources = fConfig.packageOptions.files.map(function(file) { return 'src/' + file; })
                 return gulp.src(sources, {base: 'src'})
                     .pipe(gulp.dest('./dist/' + f));
@@ -69,19 +56,20 @@ module.exports = function(gulp, config) {
                     .pipe(gulp.dest('./dist'));
             });
 
-            sequence('clean:' + f, 'copy_source:' + f, 'copy_node_modules:' + f, 'copy_files:' + f, 'zip:' + f, cb);
+            sequence('clean:' + f, 'copy_config:' + f, 'copy_source:' + f, 'copy_node_modules:' + f, 'copy_files:' + f, 'zip:' + f, cb);
         }
 
         var upload = function(f, cb) {
             var fConfig = functionConfig(f);
-            var lambda = new aws.Lambda({region: fConfig.deployOptions.region});
+            var deployOptions = config.util.extendDeep(fConfig.deployOptions, config.defaultDeployOptions);
+            var lambda = new aws.Lambda({region: deployOptions.region});
 
             var params = {
                 FunctionName: fConfig.name,
-                Handler: fConfig.deployOptions.handler,
-                Role: fConfig.deployOptions.role,
-                MemorySize: fConfig.deployOptions.memory,
-                Timeout: fConfig.deployOptions.timeout
+                Handler: deployOptions.handler,
+                Role: deployOptions.role,
+                MemorySize: deployOptions.memory,
+                Timeout: deployOptions.timeout
             };
 
             var updateFunction = function(cb) {
@@ -98,6 +86,7 @@ module.exports = function(gulp, config) {
                                     gutil.log(warning);
                                     return cb(err);
                                 }
+                                gutil.log(fConfig.name, "function code updated (" + config.util.getEnv('NODE_ENV') + ")");
                                 cb();
                             })
                         },
@@ -108,6 +97,7 @@ module.exports = function(gulp, config) {
                                     gutil.log(warning);
                                     return cb(err);
                                 }
+                                gutil.log(fConfig.name, "function configuration updated (" + config.util.getEnv('NODE_ENV') + ")");
                                 cb();
                             })
                         }
@@ -157,7 +147,8 @@ module.exports = function(gulp, config) {
 
         var invoke = function(f, payload, cb) {
             var fConfig = functionConfig(f);
-            var lambda = new aws.Lambda({region: fConfig.deployOptions.region});
+            var deployOptions = config.util.extendDeep(fConfig.deployOptions, config.defaultDeployOptions);
+            var lambda = new aws.Lambda({region: deployOptions.region});
 
             fs.readFile(payload, function(err, data) {
                 if(err) return cb('Error reading function payload ' + payload);
@@ -189,18 +180,22 @@ module.exports = function(gulp, config) {
             sequence('package:' + f, 'upload:' + f, cb);
         });
 
-        var payloads = fs.readdirSync('./spec/fixtures/' + f);
-        payloads.forEach(function(p) {
-            var payloadName = path.basename(p, '.json');
-            var payload = './spec/fixtures/' + f + '/' + p;
-            gulp.task('invoke:' + f + ':' + payloadName, function (cb) {
-                invoke(f, payload, cb);
-            });
-        })
+
+        var fixturesDir = './spec/fixtures/' + f;
+        if (fs.existsSync(fixturesDir)) {
+            var payloads = fs.readdirSync(fixturesDir);
+            payloads.forEach(function(p) {
+                var payloadName = path.basename(p, '.json');
+                var payload = path.join(fixturesDir, p);
+                gulp.task('invoke:' + f + ':' + payloadName, function (cb) {
+                    invoke(f, payload, cb);
+                });
+            })
+        }
     }
 
 
-    for (var f in currentEnvConfig().functions) {
+    for (var f in config.get('functions')) {
         functionTasks(f);
     };
 
@@ -210,13 +205,13 @@ module.exports = function(gulp, config) {
 
     gulp.task('package', function(cb) {
         var functionsSubTasks = [];
-        for (var f in currentEnvConfig().functions) { functionsSubTasks.push('package:' + f) };
+        for (var f in config.get('functions')) { functionsSubTasks.push('package:' + f) };
         sequence('clean', functionsSubTasks, cb);
     });
 
     gulp.task('deploy', function(cb) {
         var functionsSubTasks = [];
-        for (var f in currentEnvConfig().functions) { functionsSubTasks.push('deploy:' + f) };
+        for (var f in config.get('functions')) { functionsSubTasks.push('deploy:' + f) };
         sequence(functionsSubTasks, cb);
     });
 
