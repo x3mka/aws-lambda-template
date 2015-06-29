@@ -4,7 +4,10 @@ This template provides code structure and gulp tasks to manage AWS Lambda code f
 
 ## Config
 
-Everything is in ./config/aws_lambda.js
+Everything is in ./config/
+See docs and wiki: https://github.com/lorenwest/node-config
+
+See function2 sources for an example of config usage in a function. 
 
 ## Gulp
 
@@ -23,14 +26,19 @@ gulp -T
 - package
 - deploy
 - spec
+- spec_no_cc
 
 Any file f in ./spec/fixtures/function/ will result in new gulp task: invoke:function:f. This task invokes function remotely.
 Use specs to test functions locally.
 
 ## Environment
 
-Use --qa and --production switches to change task environment. Example: gulp package --qa.
-You can change env specific options in config file.
+Use NODE_ENV=qa and NODE_ENV=production env vars to change task environment.
+You can change env specific options in config files.
+
+## Specs && Code Coverage
+
+Jasmine and Istanbul are used for testing and code coverage respectively.   
 
 ## Additional functionality
 
