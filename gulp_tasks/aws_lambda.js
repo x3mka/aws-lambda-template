@@ -19,6 +19,19 @@ module.exports = function(gulp) {
         return config.get('functions.' + f);
     }
 
+    var stringSource = function(filename, str) {
+        var src = require('stream').Readable({ objectMode: true })
+        src._read = function () {
+            this.push(new gutil.File({ cwd: "", base: "", path: filename, contents: new Buffer(str) }))
+            this.push(null)
+        }
+        return src;
+    }
+
+    var objectJsonSource = function(filename, obj) {
+        return stringSource(filename, JSON.stringify(obj, null, 2));
+    }
+
     var functionTasks = function(f) {
 
         var package = function(f, cb) {
@@ -27,7 +40,16 @@ module.exports = function(gulp) {
             });
 
             gulp.task('copy_config:' + f, function() {
-                return gulp.src(['config/*.*'], {base: '.'})
+                var cOptions = config.functions[f].configOptions;
+                if (typeof cOptions === 'undefined')
+                    return;
+
+                var c = {functions: {}};
+                c.functions[f] = {configOptions: cOptions};
+
+                var src = objectJsonSource("config/default.json", c);
+
+                return src
                     .pipe(gulp.dest('./dist/' + f));
             });
 
